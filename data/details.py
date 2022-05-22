@@ -36,9 +36,10 @@ def get_details(url, index):
 	file_name = unique_id+".html"
 	soup = BeautifulSoup(raw, "lxml")
 	content = soup.find('div', id="details")
-	nfo = str(content.find_all('div', class_="nfo")[0])
-	dt = content.find_all('dt')
-	dd = content.find_all('dd')
+	if content:
+		nfo = str(content.find_all('div', class_="nfo")[0])
+		dt = content.find_all('dt')
+		dd = content.find_all('dd')
 	title = "(Index: "+index+") - "+str(soup.find('div', id="title").string)
 	name = str(soup.find('div', id="title"))
 	magnet = soup.find('div', class_="download").a["href"]

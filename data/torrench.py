@@ -142,7 +142,7 @@ def main(input_title, page_limit):
 				leeches = i.find_all('td', align="right")[1].string
 				date = i.find('font', class_="detDesc").get_text().split(' ')[1].replace(',', "")
 				size = i.find('font', class_="detDesc").get_text().split(' ')[3].replace(',', "")
-				torr_id = i.find('a', {'class': 'detLink'})["href"].split('/')[2];
+				torr_id = i.find('a', {'class': 'detLink'})["href"].split('/torrent/')[1];
 				link = url+"/torrent/"+torr_id		
 				### Extraction ends here ###
 				
@@ -151,7 +151,7 @@ def main(input_title, page_limit):
 				# Further, appending mylist to a masterlist. This masterlist stores the required result
 				masterlist.append(mylist)
 				
-				# Dictationary to map torrent name with corresponding link (Used later)
+				# Dictionary to map torrent name with corresponding link (Used later)
 				details_link[str(total_result_count)] = link
 				details_name[str(total_result_count)] = name
 			print(">> "+str(page_result_count)+" torrents");
@@ -193,13 +193,20 @@ def main(input_title, page_limit):
 				break;
 			except ValueError:
 				print("Check input! (Enter one (integer) index at a time)\n\n");
-		print("\nBye");
+		print("\nDone");
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description="A simple torrent search tool.")
-	parser.add_argument("search", help="Enter search string", nargs="?", default=None)
-	parser.add_argument("-p", "--page-limit", type=int, help="Number of pages to fetch results from (1 page = 30 results).\n [default: 1]", default=1, dest="limit")
-	parser.add_argument("-c", "--clear-html", action="store_true", default=False, help="Clear all torrent description HTML files and exit.")
-	parser.add_argument("-v", "--version", action='version', version='%(prog)s v1.0', help="Display version and exit.")
-	args = parser.parse_args()
-	init(args);
+	# parser = argparse.ArgumentParser(description="A simple torrent search tool.")
+	# parser.add_argument("search", help="Enter search string", nargs="?", default=None)
+	# parser.add_argument("-p", "--page-limit", type=int, help="Number of pages to fetch results from (1 page = 30 results).\n [default: 1]", default=1, dest="limit")
+	# parser.add_argument("-c", "--clear-html", action="store_true", default=False, help="Clear all torrent description HTML files and exit.")
+	# parser.add_argument("-v", "--version", action='version', version='%(prog)s v1.0', help="Display version and exit.")
+	# args = parser.parse_args()
+	# init(args);
+
+#  Simple test script
+	args = argparse.Namespace()
+	setattr(args, 'search', 'Hobbit')
+	setattr(args, 'limit', 20)
+	setattr(args, 'clear_html', False)
+	init(args)
