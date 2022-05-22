@@ -29,7 +29,16 @@ trusted_icon = icon_dir+"trusted.png"
 uploader_icon = ["<img src='"+vip_icon+"'>", "<img src='"+trusted_icon+"'>"]
 
 
-def get_details(url, index):
+def get_magnet(url: str, index: any) -> 'str | None':
+    t=TorrentDetail(url, index)
+    return t.magnet
+
+def get_info(url: str, index: any) -> 'str | None':
+	t=TorrentDetail(url, index)
+	return t.nfo
+
+
+def get_html(url, index):
 	t = TorrentDetail(url, index)
 	
 	# Check Uploader-Status

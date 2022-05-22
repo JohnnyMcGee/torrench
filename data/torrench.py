@@ -22,10 +22,21 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 import argparse
+try:
+	import requests
+	from bs4 import BeautifulSoup
+	from tabulate import tabulate
+	from termcolor import colored
+	import find_url
+except ImportError as e:
+	print(e);
+	print("Please install and retry.\n")
+	sys.exit()
 
 def init(args):
 	# Resolve arguments - BEGIN
-	input_title = args.search
+	input_title = ' '.join(args.search)
+	print(input_title)
 	page_limit = args.limit
 	if args.clear_html:
 		home = os.path.expanduser('~')
@@ -40,29 +51,22 @@ def init(args):
 				count = count+1;
 			print("\nRemoved %d file(s).\n" %count)
 		sys.exit()
-	if input_title == None:
-		print("\nInput string expected.\nUse --help for more\n");
+	if len(input_title) == 0:
+		print("\nSearch string expected.\nUse --help for more\n");
 		sys.exit();
 	elif page_limit <= 0 or page_limit > 50:
 		print("Enter valid page input [0<p<=50]")
 		sys.exit();
 	else:
-		main(input_title, page_limit);
+		main(input_title, page_limit, html=args.html, magnet=args.magnet, info=args.info);
 	# Resolve input arguments - END
 
-def main(input_title, page_limit):
-	try:
-		## Adding imports here since they are only required if this function is called.
-		import requests
-		from bs4 import BeautifulSoup
-		from tabulate import tabulate
-		from termcolor import colored
-		import find_url
-	except ImportError as e:
-		print(e);
-		print("Please install and retry.\n")
-		sys.exit()
-		
+def main(
+    input_title, page_limit,
+    html: bool=False,
+    magnet: bool=False,
+    info: bool=True
+    ):
 	# Get proxy list
 	url_list = []
 	url_list = find_url.find_url_list()
@@ -186,9 +190,17 @@ def main(input_title, page_limit):
 				else:
 					selected_link = details_link[str(option)]
 					selected_name = details_name[str(option)]
-					print("Fetching details for torrent index [%d] : %s" %(option, selected_name));
-					file_url = details.get_details(selected_link, str(option))
-					print("\nFile URL: "+file_url+"\n\n"); 
+					if html:
+						print("Fetching details for torrent index [%d] : %s" %(option, selected_name));
+						file_url = details.get_html(selected_link, str(option))
+						print("\nFile URL: "+file_url+"\n\n"); 
+					if magnet:
+						mag_lnk = details.get_magnet(selected_link, str(option))
+						print(mag_lnk)
+					if info:
+						d = details.get_info(selected_link, str(option))
+						print(d)
+    
 			except KeyboardInterrupt:
 				break;
 			except ValueError:
@@ -196,17 +208,14 @@ def main(input_title, page_limit):
 		print("\nDone");
 
 if __name__ == "__main__":
-	# parser = argparse.ArgumentParser(description="A simple torrent search tool.")
-	# parser.add_argument("search", help="Enter search string", nargs="?", default=None)
-	# parser.add_argument("-p", "--page-limit", type=int, help="Number of pages to fetch results from (1 page = 30 results).\n [default: 1]", default=1, dest="limit")
-	# parser.add_argument("-c", "--clear-html", action="store_true", default=False, help="Clear all torrent description HTML files and exit.")
-	# parser.add_argument("-v", "--version", action='version', version='%(prog)s v1.0', help="Display version and exit.")
-	# args = parser.parse_args()
-	# init(args);
-
-#  Simple test script
-	args = argparse.Namespace()
-	setattr(args, 'search', 'Hobbit')
-	setattr(args, 'limit', 20)
-	setattr(args, 'clear_html', False)
-	init(args)
+	parser = argparse.ArgumentParser(description="A simple torrent search tool.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	parser.add_argument("search", help="Enter search string", nargs="*", default=None)
+	parser.add_argument("-p", "--page-limit", type=int, help="Number of pages to fetch results from (1 page = 30 results).\n [default: 1]", default=1, dest="limit")
+	parser.add_argument("-c", "--clear-html", action="store_true", default=False, help="Clear all torrent description HTML files and exit.")
+	parser.add_argument("-v", "--version", action='version', version='%(prog)s v1.0', help="Display version and exit.")
+	parser.add_argument("-m", "--magnet", action="store_true", default=False, help="send magnet link to stdout")
+	parser.add_argument("--info", action="store_true", default=True, help="print info about the torrent")
+	parser.add_argument("--html", action="store_true", default=False, help="save details to html")
+	args = parser.parse_args()
+	init(args);
+	
