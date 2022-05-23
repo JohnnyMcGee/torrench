@@ -1,0 +1,6 @@
+data/*.pyc
+data/__pycache__
+bin/
+temp/
+**/.vscode/
+trn/
