@@ -4,3 +4,5 @@ bin/
 temp/
 **/.vscode/
 trn/
+data/tr/
+data/trlinux/
