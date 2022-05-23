@@ -58,7 +58,7 @@ def init(args):
 		print("Enter valid page input [0<p<=50]")
 		sys.exit();
 	else:
-		main(input_title, page_limit, torrent=args.torrent, directory=args.directory, html=args.html, magnet=args.magnet, info=args.info, category=args.category);
+		main(input_title, page_limit, rtorrent=args.rtorrent, html=args.html, magnet=args.magnet, info=args.info, category=args.category);
 	# Resolve input arguments - END
 
 def main(
@@ -67,8 +67,7 @@ def main(
     html: bool=False,
     magnet: bool=False,
     info: bool=False,
-    torrent: bool=False,
-    directory: 'str | None'=None
+	rtorrent: bool=False,
     ):
 	# Get proxy list
 	url_list = []
@@ -206,23 +205,9 @@ def main(
 						mag_lnk = details.get_magnet(selected_link, str(option))
 						os.system(f'echo {mag_lnk} |j xclip -sel clip')
 						print(mag_lnk)
-					if torrent:
-						import asyncio
-						from magnet2torrent import Magnet2Torrent, FailedToFetchException
-
-						async def fetch_torrent(link):
-							m2t = Magnet2Torrent(link)
-							try:
-								filename, torrent_data = await m2t.retrieve_torrent()
-								print(filename)
-								print(torrent_data)
-
-							except FailedToFetchException as e:
-								print("Failed")
-
-						mag_lnk = details.get_magnet(selected_link, str(option))
-						asyncio.run(fetch_torrent(mag_lnk))
-    
+					if rtorrent:
+						magnet = details.get_magnet(selected_link, str(option))
+						os.system(f"rtorrent -d ~/rtorrent_Downloads '{magnet}'")
 			except KeyboardInterrupt:
 				break;
 			except ValueError:
@@ -237,7 +222,7 @@ if __name__ == "__main__":
 	parser.add_argument("-v", "--version", action='version', version='%(prog)s v1.0', help="Display version and exit.")
 	parser.add_argument("-c", "--category", default=0, help="number corresponding to the category of search (0=all 207=HD Movies 208=HD TV Shows)")
 	parser.add_argument("-m", "--magnet", action="store_true", default=False, help="send magnet link to stdout")
-	parser.add_argument("-t", "--torrent", action="store_true", default=False, help="save .torrent file")
+	parser.add_argument("-rt", "--rtorrent", action="store_true", default=False, help="open magnet link in rtorrent")
 	parser.add_argument("-d", "--directory", action="store", default="~/torrents", help="location to store downloads")
 	parser.add_argument("--info", action="store_true", default=False, help="print info about the torrent")
 	parser.add_argument("--html", action="store_true", default=False, help="save details to html")
