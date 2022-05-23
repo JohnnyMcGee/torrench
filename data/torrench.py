@@ -22,6 +22,7 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 import argparse
+import urllib
 try:
 	import requests
 	from bs4 import BeautifulSoup
@@ -73,7 +74,7 @@ def main(
 	url_list = []
 	url_list = find_url.find_url_list()
 	
-	title = input_title.replace(" ", "+")
+	title = urllib.parse.quote(input_title)
 	total_result_count = 0
 	page_result_count = 9999
 	details_link = {}
@@ -100,7 +101,7 @@ def main(
 			search = {'q':title, 'category': category, 'page': p, 'orderby':'99'}
 			while(url_list_count < len(url_list)):
 				try:
-					raw = requests.get(url+"/s/", params=search)
+					raw = requests.get(url+"/search/"+title+"/1/99/"+str(category))
 					raw = raw.content
 					break;
 				except requests.exceptions.ConnectionError as e:
