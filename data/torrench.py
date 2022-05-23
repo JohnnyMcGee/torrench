@@ -58,14 +58,15 @@ def init(args):
 		print("Enter valid page input [0<p<=50]")
 		sys.exit();
 	else:
-		main(input_title, page_limit, html=args.html, magnet=args.magnet, info=args.info);
+		main(input_title, page_limit, html=args.html, magnet=args.magnet, info=args.info, category=args.category);
 	# Resolve input arguments - END
 
 def main(
     input_title, page_limit,
+	category: int=0,
     html: bool=False,
     magnet: bool=False,
-    info: bool=True
+    info: bool=False
     ):
 	# Get proxy list
 	url_list = []
@@ -95,7 +96,7 @@ def main(
 			# Determine proxy site to use - list to proxy sites is obtained from find_url module
 			url_list_count = 0
 			url = url_list[url_list_count]
-			search = {'q':title, 'category': '0', 'page': p, 'orderby':'99'}
+			search = {'q':title, 'category': category, 'page': p, 'orderby':'99'}
 			while(url_list_count < len(url_list)):
 				try:
 					raw = requests.get(url+"/s/", params=search)
@@ -194,12 +195,13 @@ def main(
 						print("Fetching details for torrent index [%d] : %s" %(option, selected_name));
 						file_url = details.get_html(selected_link, str(option))
 						print("\nFile URL: "+file_url+"\n\n"); 
-					if magnet:
-						mag_lnk = details.get_magnet(selected_link, str(option))
-						print(mag_lnk)
 					if info:
 						d = details.get_info(selected_link, str(option))
 						print(d)
+					if magnet:
+						mag_lnk = details.get_magnet(selected_link, str(option))
+						os.system(f'echo {mag_lnk} |j xclip -sel clip')
+						print(mag_lnk)
     
 			except KeyboardInterrupt:
 				break;
@@ -211,10 +213,11 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="A simple torrent search tool.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument("search", help="Enter search string", nargs="*", default=None)
 	parser.add_argument("-p", "--page-limit", type=int, help="Number of pages to fetch results from (1 page = 30 results).\n [default: 1]", default=1, dest="limit")
-	parser.add_argument("-c", "--clear-html", action="store_true", default=False, help="Clear all torrent description HTML files and exit.")
+	parser.add_argument("--clear-html", action="store_true", default=False, help="Clear all torrent description HTML files and exit.")
 	parser.add_argument("-v", "--version", action='version', version='%(prog)s v1.0', help="Display version and exit.")
+	parser.add_argument("-c", "--category", default=0, help="number corresponding to the category of search (0=all 207=HD Movies 208=HD TV Shows)")
 	parser.add_argument("-m", "--magnet", action="store_true", default=False, help="send magnet link to stdout")
-	parser.add_argument("--info", action="store_true", default=True, help="print info about the torrent")
+	parser.add_argument("--info", action="store_true", default=False, help="print info about the torrent")
 	parser.add_argument("--html", action="store_true", default=False, help="save details to html")
 	args = parser.parse_args()
 	init(args);
