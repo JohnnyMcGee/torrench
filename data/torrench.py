@@ -58,8 +58,19 @@ def init(args):
 	elif page_limit <= 0 or page_limit > 50:
 		print("Enter valid page input [0<p<=50]")
 		sys.exit();
+	elif not os.path.isdir(args.directory):
+		print("Invalid directory. Please try again")
+		sys.exit()
 	else:
-		main(input_title, page_limit, rtorrent=args.rtorrent, html=args.html, magnet=args.magnet, info=args.info, category=args.category);
+		main(
+			input_title,
+			page_limit,
+			directory=args.directory,
+			rtorrent=args.rtorrent,
+			html=args.html,
+			magnet=args.magnet,
+			info=args.info,
+			category=args.category)
 	# Resolve input arguments - END
 
 def main(
@@ -69,6 +80,7 @@ def main(
     magnet: bool=False,
     info: bool=False,
 	rtorrent: bool=False,
+	directory: str="~/Downloads"
     ):
 	# Get proxy list
 	url_list = []
@@ -208,7 +220,7 @@ def main(
 						print(mag_lnk)
 					if rtorrent:
 						magnet = details.get_magnet(selected_link, str(option))
-						os.system(f"rtorrent -d ~/rtorrent_Downloads '{magnet}'")
+						os.system(f"rtorrent -d '{directory}' '{magnet}'")
 			except KeyboardInterrupt:
 				break;
 			except ValueError:
@@ -222,9 +234,9 @@ if __name__ == "__main__":
 	parser.add_argument("--clear-html", action="store_true", default=False, help="Clear all torrent description HTML files and exit.")
 	parser.add_argument("-v", "--version", action='version', version='%(prog)s v1.0', help="Display version and exit.")
 	parser.add_argument("-c", "--category", default=0, help="number corresponding to the category of search (0=all 207=HD Movies 208=HD TV Shows)")
-	parser.add_argument("-m", "--magnet", action="store_true", default=False, help="send magnet link to stdout")
+	parser.add_argument("-m", "--magnet", action="store_true", default=False, help="print out magnet links")
 	parser.add_argument("-rt", "--rtorrent", action="store_true", default=False, help="open magnet link in rtorrent")
-	parser.add_argument("-d", "--directory", action="store", default="~/torrents", help="location to store downloads")
+	parser.add_argument("-d", "--directory", action="store", default=os.path.expanduser('~/Downloads'), help="location to store downloads")
 	parser.add_argument("--info", action="store_true", default=False, help="print info about the torrent")
 	parser.add_argument("--html", action="store_true", default=False, help="save details to html")
 	args = parser.parse_args()
