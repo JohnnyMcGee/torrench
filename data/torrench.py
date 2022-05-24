@@ -80,7 +80,7 @@ def main(
     magnet: bool=False,
     info: bool=False,
 	rtorrent: bool=False,
-	directory: str="~/Downloads"
+	directory: str="./"
     ):
 	# Get proxy list
 	url_list = []
@@ -221,6 +221,10 @@ def main(
 					if rtorrent:
 						magnet = details.get_magnet(selected_link, str(option))
 						os.system(f"rtorrent -d '{directory}' '{magnet}'")
+					# default display info
+					if not any([html, info, magnet, rtorrent]):
+						print(details.get_info(selected_link, str(option)))
+
 			except KeyboardInterrupt:
 				break;
 			except ValueError:
@@ -236,7 +240,7 @@ if __name__ == "__main__":
 	parser.add_argument("-c", "--category", default=0, help="number corresponding to the category of search (0=all 207=HD Movies 208=HD TV Shows)")
 	parser.add_argument("-m", "--magnet", action="store_true", default=False, help="print out magnet links")
 	parser.add_argument("-rt", "--rtorrent", action="store_true", default=False, help="open magnet link in rtorrent")
-	parser.add_argument("-d", "--directory", action="store", default=os.path.expanduser('~/Downloads'), help="location to store downloads")
+	parser.add_argument("-d", "--directory", action="store", default=os.path.expanduser('./'), help="location to store downloads")
 	parser.add_argument("--info", action="store_true", default=False, help="print info about the torrent")
 	parser.add_argument("--html", action="store_true", default=False, help="save details to html")
 	args = parser.parse_args()
