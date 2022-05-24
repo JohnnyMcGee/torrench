@@ -1,15 +1,20 @@
 FROM python
 
+# Install & Configure Torrench
 RUN mkdir /root/.torrench/
 COPY . /root/.torrench/
-RUN python -m pip install --upgrade pip
 WORKDIR /root/.torrench/
-RUN python -m pip install -r /root/.torrench/data/requirements.txt
+RUN pip install -r data/requirements.txt
 RUN chmod 755 /root/.torrench/data/torrench.py \
-&& mkdir /root/.torrench/bin \
-&& ln -s /root/.torrench/data/torrench.py /root/.torrench/bin/torrench  \
-&& echo 'export PATH=/root/.torrench/bin/:$PATH' >> /root/.bashrc
+&& echo 'alias torrench="python3 ~/.torrench/data/torrench.py"' >> /root/.bashrc
 
+# Install & Configure rtorrent
+RUN apt-get update && apt-get install -y rtorrent
 WORKDIR /root/
+RUN mkdir rtorrent_Downloads rtorrent_Watch rtorrent_Session
+COPY rtorrent.rc /root/.rtorrent.rc
+
+WORKDIR /root/rtorrent_Downloads
+VOLUME [/root/rtorrent_Downloads]
 
 CMD ["tail", "-f", "/dev/null"]

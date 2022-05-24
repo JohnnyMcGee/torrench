@@ -1,0 +1,54 @@
+# Location where to download temporary files
+directory.default.set = ~/rtorrent_Downloads
+
+# Folder to save & resume rtorrent sessions
+session = ~/rtorrent_Session
+
+# Other Settings
+upload_rate = 50
+download_rate = 0
+min_peers = 50
+max_peers = 80
+max_uploads = 4
+
+# DHT options
+dht = auto
+dht_port = 63425
+
+# Enable peer exchange (for torrents not marked private)
+# peer_exchange = yes
+
+# Port range to use for listening.
+port_range = 60125-64125
+
+# Start opening ports at a random position within the port range
+port_random = yes
+
+# Check hash for finished torrents
+check_hash = yes
+
+encryption = allow_incoming, try_outgoing, enable_retry
+# custom throttles settings
+# throttle_up = low,10
+# throttle_down = low,10
+# throttle_up = med,20
+# throttle_down = med,20
+
+# rtorrent_Watch is a folder for new torrents
+# schedule = watch_directory,0,10,load_start=~/rtorrent_Watch/*.torrent
+# schedule = tied_directory,10,10,start_tied=
+# schedule = untied_directory,10,10,close_untied=
+
+# Enable the default ratio group
+ratio.enable=
+
+# Modify the limits, the defaults is optimal.
+ratio.min.set=50
+ratio.max.set=150
+ratio.upload.set=20M
+
+# Modify the command triggered when the ratio is reached.
+# system.method.set = group.seeding.ratio.command, d.close=, d.erase=
+# Transfer the finished torrents to rtorrent_FullDownload_Files folder
+# system.method.set_key = event.download.finished,rm_torrent,"execute=rm,$d.get_tied_to_file="
+# system.method.set_key = event.download.finished,move_complete,"execute=mv,-u,$d.get_base_path=,~/rtorrent_FullDownload_Files/ ;d.set_directory=~/rtorrent_FullDownload_Files/"
