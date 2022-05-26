@@ -1,4 +1,4 @@
-        #! /usr/bin/python3
+#! /usr/bin/python3
 
 '''
 Copyright (C) 2017 Rijul Gulati <kryptxy@protonmail.com>
@@ -23,15 +23,12 @@ import os
 import sys
 import argparse
 import urllib
-from TorrentDetail import TorrentDetail
 import requests
 from bs4 import BeautifulSoup
 from tabulate import tabulate
-from termcolor import colored
 from scrape_option import scrape_option
 from find_url import find_proxy_url
 import pandas as pd
-
 
 def init(args):
     title = urllib.parse.quote(' '.join(args.search))
@@ -110,56 +107,63 @@ def main(
         num_results_in_page=len(df[df["page"] == pg+1])
         print(f">> {num_results_in_page} torrents")
 
-    total_result_count = len(df)
-    total_page_count = df.page.nunique()
     # Print Results and fetch torrent details
-    if total_result_count > 0:
+    result_count = len(df)
+    page_count = df.page.nunique()
+    if result_count > 0:
         df["categ"] = df["category"] + df["sub_category"]
         mini_df = df[["categ","name","seeds","leeches","size"]]
+        mini_df = mini_df.rename(mapper={"categ":"category"}, axis="columns")
+        mini_df.columns=[c.title() for c in mini_df.columns]
         print(tabulate(mini_df, headers='keys', tablefmt='grid'))
-        print(f"\nTotal: {total_result_count} torrents")
-        print(f"Total pages: {total_page_count}")
+        print(f"\nTotal: {result_count} torrents")
+        print(f"Total pages: {page_count}")
         print("\nFurther, a torrent's details can be fetched (Description, comments, download(Magnetic) Link, etc.)")
 
         # Fetch torrent details
         import details
+        from TorrentDetail import TorrentDetail
         print("Enter torrent's index value to fetch details (Maximum one index)\n")
-        option = 9999
 
-        while(option != 0):
-            try:
-                option = int(input("(0 = exit)\nindex > "))
-                if option > total_result_count or option < 0 or option == "":
-                    print("**Enter valid index**\n\n")
-                    continue
-                elif option == 0:
-                    break
-                else:
-
-                    selected_link = df.loc[option].link
-                    selected_name = df.loc[option].name
-                    t = TorrentDetail(selected_link, selected_name)
-                    if html:
-                        print("Fetching details for torrent index [%d] : %s" % (
-                            option, selected_name))
-                        file_url = details.save_as_html(t)
-                        print("\nFile URL: "+file_url+"\n\n")
-                    if info:
-                        d = details.get_info(selected_link, str(option))
-                        print(d)
-                    if magnet:
-                        print(t.magnet)
-                    if rtorrent:
-                        magnet = details.get_magnet(selected_link, str(option))
-                        os.system(f"rtorrent -d '{directory}' '{magnet}'")
-                    # default display info
-                    if not any([html, info, magnet, rtorrent]):
-                        print(t.nfo)
-
-            except KeyboardInterrupt:
+        while True:
+            option = input("(0 = exit)\nindex > ")
+            if option.isdigit():
+                option=int(option)
+            else:
+                print("**Enter valid index**\n\n")
+                continue
+            if option > result_count or option < 0 or option == "":
+                print("**Enter valid index**\n\n")
+                continue
+            elif option == 0:
                 break
-            except ValueError:
-                print("Check input! (Enter one (integer) index at a time)\n\n")
+            else:
+                selected_link = df.loc[option].link
+                selected_name = df.loc[option].name
+                t = TorrentDetail(selected_link, selected_name)
+                
+                def display_details(t) -> None:
+                    print(t.title)
+                    for d in list(zip(t.dt,t.dd)):
+                        if d[0]:
+                            print(d[0].get_text().strip(), d[1].get_text().replace('\n', ' '))
+                    print(t.nfo)
+                    
+                if html:
+                    print("Fetching details for torrent index [%d] : %s" % (
+                        option, selected_name))
+                    file_url = details.save_as_html(t)
+                    print("\nFile URL: "+file_url+"\n\n")
+                if info:
+                    display_details(t)
+                if magnet:
+                    print(t.magnet)
+                if rtorrent:
+                    magnet = details.get_magnet(selected_link, str(option))
+                    os.system(f"rtorrent -d '{directory}' '{magnet}'")
+                # DEFAULT
+                if not any([html, info, magnet, rtorrent]):
+                    display_details(t)
         print("\nDone")
 
 

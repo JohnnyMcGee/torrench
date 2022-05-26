@@ -11,7 +11,7 @@ class TorrentDetail:
         self.file_name = self.unique_id+".html"
         soup = BeautifulSoup(raw.content, "lxml")
         self.content = soup.find('div', id="details")
-        self.nfo = str(self.content.find_all('div', class_="nfo")[0])
+        self.nfo = self.content.find_all('div', class_="nfo")[0].text
         self.dt = self.content.find_all('dt')
         self.dd = self.content.find_all('dd')
         title = soup.find('div', id="title")
