@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  gdrive:
+    image: johnnymcgee/gdrive
+    volumes:
+      - ~/files:/root/files
+    container_name: gd
+  torrench:
+    image: johnnymcgee/torrench
+    volumes:
+      - ~/files:/root/rtorrent_Downloads
+    container_name: tr
