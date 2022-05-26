@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 Torrench is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
+but WITHOUT ANY WARRANTY without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
@@ -20,17 +20,22 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 from bs4 import BeautifulSoup
 import requests
 
-url = 'https://piratebayproxy.info/'
-raw = requests.get(url)
-raw = raw.content
-soup = BeautifulSoup(raw, "lxml")
-links = [s['href'] for s in soup.find_all('a', class_='t1')]
-# links = soup.find_all('td', {'title': 'URL'}, limit=2)
-def find_url_list():
-	myList = []
+proxy_list_url = 'https://piratebayproxy.info/'
+
+def _url_is_ok(url: str):
+	try:
+		res = requests.get(url)
+		return res.ok
+	except Exception as e:
+		print(e)
+
+def find_proxy_url() -> str:
+	raw = requests.get(proxy_list_url)
+	soup = BeautifulSoup(raw.content, "lxml")
+	links = [s['href'] for s in soup.find_all('a', class_='t1')]
 	for lnk in links:
-		myList.append(lnk);
-	return myList
+		if _url_is_ok(lnk):
+			return lnk
 
 if __name__ == "__main__":
-	print("It's a module. Can only be imported!");
+	print("It's a module. Can only be imported!")

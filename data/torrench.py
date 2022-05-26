@@ -28,7 +28,7 @@ import requests
 from bs4 import BeautifulSoup
 from tabulate import tabulate
 from termcolor import colored
-import find_url
+from find_url import find_proxy_url
 
 def init(args):
 	title = urllib.parse.quote(' '.join(args.search))
@@ -76,8 +76,6 @@ def main(
 	rtorrent: bool=False,
 	directory: str="./"
     ) -> None:
-	# Get proxy list
-	url_list = find_url.find_url_list()
 	
 	total_result_count = 0
 	page_result_count = 9999
@@ -99,28 +97,18 @@ def main(
 			print(fetch_status_str)
 			
 			page_result_count = 0
-			# Determine proxy site to use - list to proxy sites is obtained from find_url module
-			url_list_count = 0
-			url = url_list[url_list_count]
-			search = {'q':title, 'category': category, 'page': p, 'orderby':'99'}
-			while(url_list_count < len(url_list)):
-				try:
-					raw = requests.get(url+"/search/"+title+"/1/99/"+str(category))
-					raw = raw.content
-					break
-				except requests.exceptions.ConnectionError as e:
-					print("Link Not reachable... Trying next proxy...")
-					url_list_count += 1
-					url = url_list[url_list_count]
-			# End determining proxy site
-			soup = BeautifulSoup(raw, "lxml")
-			# Result found or not? 
+
+			url = find_proxy_url()
+			search_url = url+"/search/"+title+"/1/99/"+str(category)
+			raw = requests.get(search_url)
+			print(raw.content)
+			soup = BeautifulSoup(raw.content, "lxml")
 			try:
 				content = soup.find_all('table', id="searchResult")[0]
 			except IndexError:
 				if p == 0:
 					print("\nNo results found for given input!")
-					break	
+					break
 					
 			data = content.find_all('tr')
 			mylist = []
@@ -165,7 +153,7 @@ def main(
 				# Dictionary to map torrent name with corresponding link (Used later)
 				details_link[str(total_result_count)] = link
 				details_name[str(total_result_count)] = name
-			print(">> "+str(page_result_count)+" torrents")
+				print(">> "+str(page_result_count)+" torrents")
 	except KeyboardInterrupt:
 		print("\nAborted!\n")
 	
