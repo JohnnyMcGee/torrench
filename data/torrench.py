@@ -20,6 +20,7 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import os
+import subprocess
 import sys
 import argparse
 import urllib
@@ -160,7 +161,11 @@ def main(
                     print(t.magnet)
                 if rtorrent:
                     magnet = details.get_magnet(selected_link, str(option))
-                    os.system(f"rtorrent -d '{directory}' '{magnet}'")
+                    try:
+                        subprocess.call(['rtorrent','-d',directory, magnet])
+                    except Exception as e:
+                        print("Error: ", e)
+                        print ('Rtorrent does not exist. Please install and try again.')   
                 # DEFAULT
                 if not any([html, info, magnet, rtorrent]):
                     display_details(t)
