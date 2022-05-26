@@ -28,10 +28,12 @@ import requests
 from bs4 import BeautifulSoup
 from tabulate import tabulate
 from scrape_option import scrape_option
-from find_url import find_proxy_url
 import pandas as pd
 
-def init(args):
+from find_url import find_proxy_url
+from TorrentDetail import TorrentDetail
+
+def init(args: argparse.Namespace) -> None:
     title = urllib.parse.quote(' '.join(args.search))
     page_limit = args.limit
     if args.clear_html:
@@ -57,27 +59,9 @@ def init(args):
         print("Invalid directory. Please try again")
         sys.exit()
     else:
-        main(
-            title,
-            page_limit,
-            directory=args.directory,
-            rtorrent=args.rtorrent,
-            html=args.html,
-            magnet=args.magnet,
-            info=args.info,
-            category=args.category)
+        main(title, page_limit, category=args.category, args=args)
 
-
-def main(
-        title: str,
-        page_limit: int,
-    category: int = 0,
-        html: bool = False,
-        magnet: bool = False,
-        info: bool = False,
-    rtorrent: bool = False,
-    directory: str = "./"
-) -> None:
+def main(title: str, page_limit: int, category: int, args:argparse.Namespace) -> None:
     df = pd.DataFrame(columns=["category","sub_category","name","seeds","leeches","size","date","uploader","comment","page","link"])
     url = find_proxy_url()
 
@@ -116,17 +100,13 @@ def main(
         mini_df = df[["categ","name","seeds","leeches","size"]]
         mini_df = mini_df.rename(mapper={"categ":"category"}, axis="columns")
         mini_df.columns=[c.title() for c in mini_df.columns]
-        print(tabulate(mini_df, headers='keys', tablefmt='grid'))
-        print(f"\nTotal: {result_count} torrents")
-        print(f"Total pages: {page_count}")
-        print("\nFurther, a torrent's details can be fetched (Description, comments, download(Magnetic) Link, etc.)")
-
-        # Fetch torrent details
-        import details
-        from TorrentDetail import TorrentDetail
-        print("Enter torrent's index value to fetch details (Maximum one index)\n")
-
         while True:
+            print(tabulate(mini_df, headers='keys', tablefmt='grid'))
+            print(f"\nTotal: {result_count} torrents")
+            print(f"Total pages: {page_count}")
+            print("\nFurther, a torrent's details can be fetched (Description, comments, download(Magnetic) Link, etc.)")
+            print("Enter torrent's index value to fetch details (Maximum one index)\n")
+
             option = input("(0 = exit)\nindex > ")
             if option.isdigit():
                 option=int(option)
@@ -139,38 +119,55 @@ def main(
             elif option == 0:
                 break
             else:
-                selected_link = df.loc[option].link
-                selected_name = df.loc[option].name
-                t = TorrentDetail(selected_link, selected_name)
-                
-                def display_details(t) -> None:
-                    print(t.title)
-                    for d in list(zip(t.dt,t.dd)):
-                        if d[0]:
-                            print(d[0].get_text().strip(), d[1].get_text().replace('\n', ' '))
-                    print(t.nfo)
-                    
-                if html:
-                    print("Fetching details for torrent index [%d] : %s" % (
-                        option, selected_name))
-                    file_url = details.save_as_html(t)
-                    print("\nFile URL: "+file_url+"\n\n")
-                if info:
-                    display_details(t)
-                if magnet:
-                    print(t.magnet)
-                if rtorrent:
-                    magnet = details.get_magnet(selected_link, str(option))
-                    try:
-                        subprocess.call(['rtorrent','-d',directory, magnet])
-                    except Exception as e:
-                        print("Error: ", e)
-                        print ('Rtorrent does not exist. Please install and try again.')   
-                # DEFAULT
-                if not any([html, info, magnet, rtorrent]):
-                    display_details(t)
+                t = TorrentDetail(df.loc[option].link, df.loc[option].name)
+                _handle_selection(t, args)
         print("\nDone")
 
+def _handle_selection(t: TorrentDetail, args: argparse.Namespace) -> None:
+    def _display_details(t: TorrentDetail) -> None:
+        print(t.title)
+        for d in list(zip(t.dt,t.dd)):
+            if d[0]:
+                print(d[0].get_text().strip(), d[1].get_text().replace('\n', ' '))
+        print(t.nfo) 
+                        
+    def _launch_rtorrent(t: TorrentDetail) -> None:
+        try:
+            subprocess.call(['rtorrent','-d', args.directory, t.magnet])
+        except Exception as e:
+            print("Error: ", e)
+            print ('Rtorrent does not exist. Please install and try again.')   
+    
+    def _save_as_html(t: TorrentDetail):
+        from details import save_as_html
+        print(f"Fetching details for torrent: {t.title}")
+        file_url = save_as_html(t)
+        print("\nFile URL: "+file_url+"\n\n")
+    
+    def _display_magnet(t: TorrentDetail) -> None:
+        print(t.magnet)
+    
+    if args.html:
+        _save_as_html(t)
+    if args.info:
+        _display_details(t)
+    if args.magnet:
+        _display_magnet(t)
+    if args.rtorrent:
+        _launch_rtorrent(t)
+    # DEFAULT
+    if not any([args.html, args.info, args.magnet, args.rtorrent]):
+        actions = {"i":_display_details, "m": _display_magnet, "r": _launch_rtorrent, "h": _save_as_html}
+        while True:
+            print(f"Choose an action for {t.title}")
+            print("i => info | ","m => magnet | ","r => launch rtorrent | ","h => save as html | ", "b => back")
+            res = input("(0 = exit) action > ").lower()
+            if res=="0":
+                sys.exit()
+            elif res=="b":
+                break
+            elif res in actions:
+                actions[res](t)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

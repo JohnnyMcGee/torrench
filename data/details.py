@@ -28,15 +28,6 @@ vip_icon = icon_dir+"vip.gif"
 trusted_icon = icon_dir+"trusted.png"
 uploader_icon = ["<img src='"+vip_icon+"'>", "<img src='"+trusted_icon+"'>"]
 
-
-def get_magnet(url: str, index: any) -> 'str | None':
-    t=TorrentDetail(url, index)
-    return t.magnet
-
-def get_info(url: str, index: any) -> 'str | None':
-	t=TorrentDetail(url, index)
-	return t.nfo
-
 def save_as_html(t: TorrentDetail):
 	# Check Uploader-Status
 	style_tag = "<style> pre {white-space: pre-wrap text-align: left} h2, .center {text-align: center} .vip {color: #336600} .trusted {color: #FF00CC}  body {margin:0 auto width:70%} table, td, th {border: 1px solid black} td, th {text-align: center vertical-align: middle font-size: 15px padding: 6px} .boxed{border: 1px solid black padding: 3px} </style> "
