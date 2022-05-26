@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+        #! /usr/bin/python3
 
 '''
 Copyright (C) 2017 Rijul Gulati <kryptxy@protonmail.com>
@@ -16,7 +16,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar.  If not, see <http://www.gnu.org/licenses/>. 
+along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import os
@@ -28,7 +28,9 @@ import requests
 from bs4 import BeautifulSoup
 from tabulate import tabulate
 from termcolor import colored
+from scrape_option import scrape_option
 from find_url import find_proxy_url
+import pandas as pd
 
 
 def init(args):
@@ -78,105 +80,45 @@ def main(
     rtorrent: bool = False,
     directory: str = "./"
 ) -> None:
+    df = pd.DataFrame(columns=["category","sub_category","name","seeds","leeches","size","date","uploader","comment","page","link"])
+    url = find_proxy_url()
 
-    total_result_count = 0
-    page_result_count = 9999
-    details_link = {}
-    details_name = {}
-    masterlist = []
+    for pg in range(page_limit):
+        if page_limit > 1:
+            fetch_status_str = "\nFetching from page: "+str(pg+1)
+        else:
+            fetch_status_str = "\n(Optional) Use [-p] option to specify pages.\n\nFetching results (Max: 30)...\n(Might take longer. Be patient)"
+        print(fetch_status_str)
 
-    try:
-        # Traverse on basis of page_limit input
-        for pg in range(page_limit):
-            # If results in a page are <30, break loop (no more remaining pages are fetched)
-            if page_result_count < 30:
-                break
+        # confirm there is data on the page
+        search_url = f"{url}/search/{title}/{pg+1}/99/{category}"
+        raw = requests.get(search_url)
+        soup = BeautifulSoup(raw.content, "lxml")
+        table = soup.table
+        if not table or len(table.find_all('tr')) < 3:
+            if pg == 0:
+                print("\nNo results found for given input!")
+            break
+        rows = table.find_all('tr')[1:-1]
 
-            if page_limit > 1:
-                fetch_status_str = "\nFetching from page: "+str(pg+1)
-            else:
-                fetch_status_str = "\n(Optional) Use [-p] option to specify pages.\n\nFetching results (Max: 30)...\n(Might take longer. Be patient)"
-            print(fetch_status_str)
+        # scrape options into dataframe
+        for row in rows:
+            option = scrape_option(row)
+            option["page"]=pg+1
+            df.loc[len(df.index)+1]=option
+            
+        num_results_in_page=len(df[df["page"] == pg+1])
+        print(f">> {num_results_in_page} torrents")
 
-            page_result_count = 0
-
-            url = find_proxy_url()
-            search_url = f"{url}/search/{title}/{pg}/99/{category}"
-            raw = requests.get(search_url)
-            soup = BeautifulSoup(raw.content, "lxml")
-            # confirm there is data on this page
-            table = soup.table
-            if not table or len(table.find_all('tr')) < 3:
-                if pg == 0:
-                    print("\nNo results found for given input!")
-                break
-            # drop irrelevant first and last rows
-            rows = table.find_all('tr')[1:-1]
-            mylist = []
-            ### Extraction begins here ###
-            for i in rows:
-                name = i.find('a', class_="detLink")
-                uploader = i.find('a', class_="detDesc")
-                comments = i.find(
-                    'img', {'src': '/static/img/icon_comment.gif'})
-                if comments != None:
-                    comment = comments['alt'].split(
-                        " ")[-2]  # Total number of comments
-                else:
-                    comment = "0"
-                if name == None or uploader == None:
-                    continue
-                name = name.string
-                uploader = uploader.string
-                total_result_count += 1
-                page_result_count += 1
-                categ = i.find('td', class_="vertTh").find_all('a')[0].string
-                sub_categ = i.find('td', class_="vertTh").find_all('a')[
-                    1].string
-                is_vip = i.find('img', {'title': "VIP"})
-                is_trusted = i.find('img', {'title': 'Trusted'})
-                if(is_vip != None):
-                    name = colored(name, "green")
-                    uploader = colored(uploader, 'green')
-                elif(is_trusted != None):
-                    name = colored(name, 'magenta')
-                    uploader = colored(uploader, 'magenta')
-                seeds = i.find_all('td', align="right")[0].string
-                leeches = i.find_all('td', align="right")[1].string
-                date = i.find('font', class_="detDesc").get_text().split(
-                    ' ')[1].replace(',', "")
-                size = i.find('font', class_="detDesc").get_text().split(
-                    ' ')[3].replace(',', "")
-                torr_id = i.find('a', {'class': 'detLink'})[
-                    "href"].split('/torrent/')[1]
-                link = url+"/torrent/"+torr_id
-                ### Extraction ends here ###
-
-                # Storing each row result in mylist
-                mylist = [categ+" > "+sub_categ, name, "--" +
-                          str(total_result_count)+"--", uploader, size, seeds, leeches, date, comment]
-                # Further, appending mylist to a masterlist. This masterlist stores the required result
-                masterlist.append(mylist)
-
-                # Dictionary to map torrent name with corresponding link (Used later)
-                details_link[str(total_result_count)] = link
-                details_name[str(total_result_count)] = name
-                print(">> "+str(page_result_count)+" torrents")
-    except KeyboardInterrupt:
-        print("\nAborted!\n")
-
+    total_result_count = len(df)
+    total_page_count = df.page.nunique()
     # Print Results and fetch torrent details
-    if(total_result_count > 0):
-        print("\n\nS=Seeds L=Leeches C=Comments")
-        final_output = tabulate(masterlist, headers=[
-                                'TYPE', 'NAME', 'INDEX', 'UPLOADER', 'SIZE', 'S', 'L', 'UPLOADED', "C"], tablefmt="grid")
-        print(final_output)
-        print("\nTotal: "+str(total_result_count)+" torrents")
-        exact_no_of_pages = total_result_count//30
-        has_extra_page = total_result_count % 30
-        if has_extra_page > 0:
-            exact_no_of_pages += 1
-        print("Total pages: "+str(exact_no_of_pages))
+    if total_result_count > 0:
+        df["categ"] = df["category"] + df["sub_category"]
+        mini_df = df[["categ","name","seeds","leeches","size"]]
+        print(tabulate(mini_df, headers='keys', tablefmt='grid'))
+        print(f"\nTotal: {total_result_count} torrents")
+        print(f"Total pages: {total_page_count}")
         print("\nFurther, a torrent's details can be fetched (Description, comments, download(Magnetic) Link, etc.)")
 
         # Fetch torrent details
@@ -193,8 +135,9 @@ def main(
                 elif option == 0:
                     break
                 else:
-                    selected_link = details_link[str(option)]
-                    selected_name = details_name[str(option)]
+
+                    selected_link = df.loc[option].link
+                    selected_name = df.loc[option].name
                     t = TorrentDetail(selected_link, selected_name)
                     if html:
                         print("Fetching details for torrent index [%d] : %s" % (
@@ -225,7 +168,7 @@ if __name__ == "__main__":
         description="A simple torrent search tool.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("search", help="Enter search string",
                         nargs="*", default=None)
-    parser.add_argument("-pg", "--page-limit", type=int,
+    parser.add_argument("-p", "--page-limit", type=int,
                         help="Number of pages to fetch results from (1 page = 30 results).\n [default: 1]", default=1, dest="limit")
     parser.add_argument("--clear-html", action="store_true", default=False,
                         help="Clear all torrent description HTML files and exit.")
