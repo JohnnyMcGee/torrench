@@ -23,6 +23,7 @@ import os
 import sys
 import argparse
 import urllib
+from TorrentDetail import TorrentDetail
 try:
 	import requests
 	from bs4 import BeautifulSoup
@@ -207,23 +208,22 @@ def main(
 				else:
 					selected_link = details_link[str(option)]
 					selected_name = details_name[str(option)]
+					t = TorrentDetail(selected_link, selected_name)
 					if html:
 						print("Fetching details for torrent index [%d] : %s" %(option, selected_name));
-						file_url = details.get_html(selected_link, str(option))
+						file_url = details.save_as_html(t)
 						print("\nFile URL: "+file_url+"\n\n"); 
 					if info:
 						d = details.get_info(selected_link, str(option))
 						print(d)
 					if magnet:
-						mag_lnk = details.get_magnet(selected_link, str(option))
-						os.system(f'echo {mag_lnk} |j xclip -sel clip')
-						print(mag_lnk)
+						print(t.magnet)
 					if rtorrent:
 						magnet = details.get_magnet(selected_link, str(option))
 						os.system(f"rtorrent -d '{directory}' '{magnet}'")
 					# default display info
 					if not any([html, info, magnet, rtorrent]):
-						print(details.get_info(selected_link, str(option)))
+						print(t.nfo)
 
 			except KeyboardInterrupt:
 				break;
