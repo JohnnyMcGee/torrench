@@ -77,7 +77,6 @@ def main(
 	directory: str="./"
     ) -> None:
 	# Get proxy list
-	url_list = []
 	url_list = find_url.find_url_list()
 	
 	total_result_count = 0

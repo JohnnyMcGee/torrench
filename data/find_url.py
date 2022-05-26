@@ -20,18 +20,16 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 from bs4 import BeautifulSoup
 import requests
 
-# url = "https://thepiratebay-proxylist.org/"
 url = 'https://piratebayproxy.info/'
 raw = requests.get(url)
 raw = raw.content
 soup = BeautifulSoup(raw, "lxml")
-links = soup.find_all('td', {'title': 'URL'}, limit=2)
-if len(links) < 1:
-    print("FAILED TO LOAD PROXY LINKS")
-myList = ["https://thepiratebay0.org"]
+links = [s['href'] for s in soup.find_all('a', class_='t1')]
+# links = soup.find_all('td', {'title': 'URL'}, limit=2)
 def find_url_list():
-	for i in links:
-		myList.append(i.a["href"]);
+	myList = []
+	for lnk in links:
+		myList.append(lnk);
 	return myList
 
 if __name__ == "__main__":
